@@ -1,0 +1,9 @@
+<h1>📋 Historial de Facturas</h1>
+<ul>
+{% for f in facturas %}
+  <li><strong>{{ f.numero }}</strong> - {{ f.cliente_nombre }} - {{ f.total }}€ - {{ f.estado }}</li>
+{% else %}
+  <li>No hay facturas aún.</li>
+{% endfor %}
+</ul>
+<a href="/facturas/generar">← Generar nueva</a>
