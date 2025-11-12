@@ -8,18 +8,6 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 
-# Importar Config directamente
-try:
-    from config import Config
-except ImportError:
-    # Configuración por defecto si no encuentra config.py
-    class Config:
-        SECRET_KEY = 'dev-key-segura-aqui'
-        SQLALCHEMY_DATABASE_URI = 'sqlite:///ninfatura.db'
-        SQLALCHEMY_TRACK_MODIFICATIONS = False
-        UPLOAD_FOLDER = 'uploads'
-        MAX_CONTENT_LENGTH = 16 * 1024 * 1024
-
 db = SQLAlchemy()
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
@@ -28,24 +16,42 @@ def create_app():
     app = Flask(__name__, 
                 template_folder='../factura_templates',
                 static_folder='../static')
-    app.config.from_object(Config)
 
+    # === CONFIG ===
+    try:
+        from config import Config
+        app.config.from_object(Config)
+    except ImportError:
+        class Config:
+            SECRET_KEY = 'dev-key-segura-aqui'
+            SQLALCHEMY_DATABASE_URI = 'sqlite:///ninfatura.db'
+            SQLALCHEMY_TRACK_MODIFICATIONS = False
+            UPLOAD_FOLDER = 'uploads'
+            MAX_CONTENT_LENGTH = 16 * 1024 * 1024
+        app.config.from_object(Config)
+
+    # === INIT EXTENSIONS ===
     db.init_app(app)
     login_manager.init_app(app)
 
     # === BLUEPRINTS ===
-    # Auth (si existe)
+    # Auth
     try:
         from routes.auth import bp as auth_bp
         app.register_blueprint(auth_bp, url_prefix='/auth')
     except ImportError:
-        print("⚠️  No se pudo importar routes.auth - continuando sin autenticación")
+        print("⚠️ No se pudo importar routes.auth")
 
-    # Facturas (NUEVO)
+    # Facturas (¡CON PREFIX!)
     try:
         from routes.facturas import bp as facturas_bp
-        app.register_blueprint(facturas_bp)
+        app.register_blueprint(facturas_bp, url_prefix='/facturas')
     except ImportError as e:
-        print(f"⚠️  No se pudo importar routes.facturas: {e}")
+        print(f"⚠️ Error importando facturas: {e}")
+
+    # === RUTA RAÍZ ===
+    @app.route('/')
+    def home():
+        return '<h1>🚀 NINFATURA ONLINE!</h1><p><a href="/facturas/generar">Generar factura</a></p>'
 
     return app
