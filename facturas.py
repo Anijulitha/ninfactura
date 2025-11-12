@@ -1,10 +1,10 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for
-from models.factura import Factura, db
+from flask import Blueprint, render_template, request, redirect, url_for, flash
+from models.factura import Factura, db  # Asegúrate que exista models/factura.py
 from utils.generadores import generar_facturae, generar_pdf, enviar_factura
 import uuid
 from datetime import datetime
 
-bp = Blueprint('facturas', _name_, url_prefix='/facturas')
+bp = Blueprint('facturas', __name__, url_prefix='/facturas')
 
 @bp.route('/generar', methods=['GET', 'POST'])
 def generar():
@@ -44,11 +44,13 @@ def generar():
         db.session.commit()
 
         flash(f'Factura {numero} enviada por WhatsApp y email!')
-        return redirect('/facturas/historial')
+        return redirect(url_for('facturas.historial'))
 
-    return render_template('facturas/generar.html')
+    return render_template('facturas/generar.html')  # ¡Asegúrate que exista esta carpeta!
 
 @bp.route('/historial')
 def historial():
+    facturas = Factura.query.all()
+    return render_template('facturas/historial.html', facturas=facturas)
     facturas = Factura.query.order_by(Factura.fecha_emision.desc()).all()
     return render_template('facturas/historial.html', facturas=facturas)
