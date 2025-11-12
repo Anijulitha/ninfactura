@@ -13,9 +13,9 @@ login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
 
 def create_app():
-    app = Flask(__name__, 
-                template_folder='../factura_templates',
-                static_folder='../static')
+     app = Flask(_name_, 
+            template_folder='factura_templates',  # ¡Quita el '../'!
+            static_folder='static')
 
     # === CONFIG ===
     try:
