@@ -1,27 +1,15 @@
 <!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Generar Factura - Ninfactura</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; background: #f4f4f4; }
-        h1 { color: #2c3e50; }
-        form { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 500px; }
-        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; }
-        button { background: #27ae60; color: white; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
-        button:hover { background: #219150; }
-    </style>
-</head>
+<html>
+<head><title>Generar Factura</title></head>
 <body>
-    <h1>🚀 Generar Factura Electrónica</h1>
-    <form method="post">
-        <input type="number" step="0.01" name="base" placeholder="Base imponible (€)" required>
-        <input type="text" name="nombre" placeholder="Nombre del cliente" required>
-        <input type="text" name="nif" placeholder="NIF / DNI" required>
-        <input type="email" name="email" placeholder="Email del cliente" required>
-        <input type="text" name="telefono" placeholder="Teléfono (WhatsApp)" required>
-        <input type="text" name="empresa" placeholder="Tu empresa (opcional)">
-        <button type="submit">💸 Generar y Enviar por WhatsApp + Email</button>
-    </form>
+<h1>🚀 Generar Factura</h1>
+<form method="post">
+  <input name="base" placeholder="Base imponible (€)" required>
+  <input name="nombre" placeholder="Nombre cliente" required>
+  <input name="nif" placeholder="NIF/DNI" required>
+  <input name="email" placeholder="Email" required>
+  <input name="telefono" placeholder="Teléfono WhatsApp" required>
+  <button>Generar</button>
+</form>
 </body>
 </html>
