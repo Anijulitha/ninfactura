@@ -1,9 +1,33 @@
-<h1>📋 Historial de Facturas</h1>
-<ul>
-{% for f in facturas %}
-  <li>{{ f.numero }} - {{ f.cliente_nombre }} - {{ f.total }} €</li>
-{% else %}
-  <li>No hay facturas aún.</li>
-{% endfor %}
-</ul>
-<a href="/facturas/generar">Nueva Factura</a>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Historial de Facturas - Ninfactura</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background: #f4f4f4; }
+        h1 { color: #2c3e50; text-align: center; }
+        ul { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 800px; margin: auto; }
+        li { padding: 10px; border-bottom: 1px solid #ddd; }
+        li:last-child { border-bottom: none; }
+        a { background: #3498db; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 20px; }
+        a:hover { background: #2980b9; }
+    </style>
+</head>
+<body>
+    <h1>📋 Historial de Facturas</h1>
+    <ul>
+        {% for f in facturas %}
+            <li>
+                <strong>Nº: {{ f.numero }}</strong> | 
+                Cliente: {{ f.cliente_nombre }} | 
+                Total: {{ f.total }}€ | 
+                Estado: {{ f.estado }} | 
+                Fecha: {{ f.fecha_emision.strftime('%d/%m/%Y') }}
+            </li>
+        {% else %}
+            <li>No hay facturas aún. ¡<a href="/facturas/generar">Crea la primera!</a></li>
+        {% endfor %}
+    </ul>
+    <a href="/facturas/generar">➕ Generar Nueva Factura</a>
+</body>
+</html>
