@@ -36,8 +36,7 @@ def allowed_file(filename):
 
 @app.route('/')
 def index():
-    # Mostrar últimas facturas subidas
-    facturas = Factura.query.order_by(Factura.fecha_subida.desc()).limit(5).all()
+    facturas = []  # Simulado
     return render_template('upload.html', facturas=facturas)
 
 @app.route('/upload', methods=['POST'])
