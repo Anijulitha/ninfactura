@@ -1,52 +1,25 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
-from models.factura import Factura, db
-from utils.generadores import generar_facturae, generar_pdf, enviar_factura
-import uuid
+from __init__ import db  # Importa db de la raíz
 from datetime import datetime
 
-bp = Blueprint('facturas', __name__, url_prefix='/facturas')
+class Factura(db.Model):
+    __tablename__ = 'factura'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    numero = db.Column(db.String(50), unique=True, nullable=False)
+    cliente_nombre = db.Column(db.String(200))
+    cliente_nif = db.Column(db.String(20))
+    cliente_email = db.Column(db.String(120))
+    cliente_telefono = db.Column(db.String(20))
+    base_imponible = db.Column(db.Float, default=0.0)
+    iva = db.Column(db.Float, default=0.0)
+    total = db.Column(db.Float, default=0.0)
+    fecha_emision = db.Column(db.DateTime, default=datetime.utcnow)
+    fecha_pago = db.Column(db.DateTime)
+    estado = db.Column(db.String(20), default='pendiente')
+    empresa = db.Column(db.String(100), default='Anónima')
+    xml_path = db.Column(db.String(200))
+    pdf_path = db.Column(db.String(200))
+    referencia_hacienda = db.Column(db.String(100))
 
-@bp.route('/generar', methods=['GET', 'POST'])
-def generar():
-    if request.method == 'POST':
-        numero = 'F' + datetime.now().strftime('%Y%m') + '-' + str(uuid.uuid4())[:4].upper()
-        
-        base = float(request.form['base'])
-        iva = base * 0.21
-        total = base + iva
-
-        factura = Factura(
-            numero=numero,
-            cliente_nombre=request.form['nombre'],
-            cliente_nif=request.form['nif'],
-            cliente_email=request.form['email'],
-            cliente_telefono=request.form['telefono'],
-            base_imponible=base,
-            iva=iva,
-            total=total,
-            estado='generada',
-            empresa=request.form.get('empresa', 'Anónima')
-        )
-        db.session.add(factura)
-        db.session.commit()
-
-        xml_path = generar_facturae(factura)
-        pdf_path = generar_pdf(factura)
-        factura.xml_path = xml_path
-        factura.pdf_path = pdf_path
-        db.session.commit()
-
-        enviar_factura(factura)
-        factura.estado = 'enviada'
-        db.session.commit()
-
-        flash(f'Factura {numero} enviada por WhatsApp y email!')
-        return redirect(url_for('facturas.historial'))
-
-    return render_template('facturas/generar.html')
-
-@bp.route('/historial')
-def historial():
-    # Solo UNA consulta: ordenada por fecha
-    facturas = Factura.query.order_by(Factura.fecha_emision.desc()).all()
-    return render_template('facturas/historial.html', facturas=facturas)
+    def __repr__(self):
+        return f'<Factura {self.numero}>'
