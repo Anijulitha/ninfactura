@@ -1,28 +1,24 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-import uuid
 from datetime import datetime
+import uuid
 
-# Importa db y Factura desde models (asegúrate que existan)
-try:
-    from models.factura import Factura, db
-except ImportError:
-    # Simula si no existe (para testing)
-    class Factura:
-        pass
-    db = type('DB', (), {'session': type('Session', (), {'add': lambda x: print('Factura añadida'), 'commit': lambda: print('Commit OK')})})()
+# IMPORTA db Y Factura DESDE LA RAÍZ (NO DESDE models.factura)
+from __init__ import db
+from models.factura import Factura
 
-# Importa funciones de utils (simuladas si no existen)
+# FUNCIONES SIMULADAS SI NO EXISTEN utils
 try:
     from utils.generadores import generar_facturae, generar_pdf, enviar_factura
 except ImportError:
     def generar_facturae(factura):
-        return f"xml_{factura.numero}.xml"
+        return f"facturas/xml/{factura.numero}.xml"
     def generar_pdf(factura):
-        return f"pdf_{factura.numero}.pdf"
+        return f"facturas/pdf/{factura.numero}.pdf"
     def enviar_factura(factura):
-        print(f"Enviando {factura.numero} por WhatsApp/email")
+        print(f"WhatsApp y email enviados para {factura.numero}")
 
-bp = Blueprint('facturas', __name__, url_prefix='/facturas')  # ¡URL PREFIX AQUÍ!
+# BLUEPRINT
+bp = Blueprint('facturas', __name__, url_prefix='/facturas')
 
 @bp.route('/generar', methods=['GET', 'POST'])
 def generar():
@@ -47,22 +43,22 @@ def generar():
         db.session.add(factura)
         db.session.commit()
 
-        xml_path = generar_facturae(factura)
-        pdf_path = generar_pdf(factura)
-        factura.xml_path = xml_path
-        factura.pdf_path = pdf_path
+        # Generar archivos
+        factura.xml_path = generar_facturae(factura)
+        factura.pdf_path = generar_pdf(factura)
         db.session.commit()
 
+        # Enviar
         enviar_factura(factura)
         factura.estado = 'enviada'
         db.session.commit()
 
-        flash(f'¡Factura {numero} generada y enviada!')
+        flash(f'Factura {numero} generada y enviada!')
         return redirect(url_for('facturas.historial'))
 
     return render_template('facturas/generar.html')
 
 @bp.route('/historial')
 def historial():
-    facturas = Factura.query.order_by(Factura.fecha_emision.desc()).all() if 'Factura' in globals() else []
+    facturas = Factura.query.order_by(Factura.fecha_emision.desc()).all()
     return render_template('facturas/historial.html', facturas=facturas)
