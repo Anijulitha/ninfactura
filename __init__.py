@@ -17,7 +17,7 @@ def create_app():
                 template_folder='factura_templates',
                 static_folder='static')
 
-    # === CONFIGURACIÓN (PRIMERO!) ===
+    # === CONFIGURACIÓN ===
     try:
         from config import Config
         app.config.from_object(Config)
@@ -30,7 +30,7 @@ def create_app():
             MAX_CONTENT_LENGTH = 16 * 1024 * 1024
         app.config.from_object(Config)
 
-    # === STRIPE CONFIG (DESPUÉS DE CONFIG!) ===
+    # === STRIPE CONFIG ===
     import stripe
     stripe.api_key = app.config.get('STRIPE_SECRET_KEY')
     app.config['STRIPE_PUBLIC_KEY'] = os.environ.get('STRIPE_PUBLISHABLE_KEY')
