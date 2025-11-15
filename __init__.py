@@ -1,7 +1,6 @@
 import os
 import sys
 
-# Añadir el directorio actual al path (opcional, quítalo si da problemas)
 # sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from flask import Flask
@@ -11,14 +10,14 @@ from flask_login import LoginManager
 # === EXTENSIONES GLOBALES ===
 db = SQLAlchemy()
 login_manager = LoginManager()
-login_manager.login_view = 'auth.login'  # Redirige a login si no estás logueado
+login_manager.login_view = 'auth.login'
 
 def create_app():
     app = Flask(__name__, 
                 template_folder='factura_templates',
                 static_folder='static')
 
-    # === CONFIGURACIÓN ===
+    # === CONFIGURACIÓN (PRIMERO!) ===
     try:
         from config import Config
         app.config.from_object(Config)
@@ -31,11 +30,18 @@ def create_app():
             MAX_CONTENT_LENGTH = 16 * 1024 * 1024
         app.config.from_object(Config)
 
+    # === STRIPE CONFIG (DESPUÉS DE CONFIG!) ===
+    import stripe
+    stripe.api_key = app.config.get('STRIPE_SECRET_KEY')
+    app.config['STRIPE_PUBLIC_KEY'] = os.environ.get('STRIPE_PUBLISHABLE_KEY')
+    app.config['STRIPE_PRICE_ID'] = os.environ.get('STRIPE_PRICE_ID')
+    app.config['STRIPE_WEBHOOK_SECRET'] = os.environ.get('STRIPE_WEBHOOK_SECRET')
+
     # === INICIALIZAR EXTENSIONES ===
     db.init_app(app)
     login_manager.init_app(app)
 
-    # === USER LOADER (OBLIGATORIO PARA FLASK-LOGIN) ===
+    # === USER LOADER ===
     from models.user import User
 
     @login_manager.user_loader
@@ -54,6 +60,18 @@ def create_app():
         app.register_blueprint(facturas_bp, url_prefix='/facturas')
     except ImportError as e:
         print(f"⚠️ Error importando facturas: {e}")
+
+    try:
+        from routes.pagos import bp as pagos_bp
+        app.register_blueprint(pagos_bp, url_prefix='/pagos')
+    except ImportError as e:
+        print(f"⚠️ Error importando pagos: {e}")
+
+    try:
+        from routes.webhook import bp as webhook_bp
+        app.register_blueprint(webhook_bp)
+    except ImportError as e:
+        print(f"⚠️ Error importando webhook: {e}")
 
     # === RUTA PRINCIPAL ===
     @app.route('/')
