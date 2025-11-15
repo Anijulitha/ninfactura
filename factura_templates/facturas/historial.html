@@ -27,6 +27,15 @@
         {% else %}
             <li>No hay facturas aún. ¡<a href="/facturas/generar">Crea la primera!</a></li>
         {% endfor %}
+        {% if current_user.plan == 'free' %}
+  <form action="/pagos/crear-sesion" method="POST">
+    <button style="background:#635BFF;color:white;padding:15px;border:none;font-size:18px;">
+      🚀 SUSCRÍBETE A PRO – 79€/MES
+    </button>
+  </form>
+{% else %}
+  <p style="color:green;">✅ ERES PRO – Acceso ilimitado</p>
+{% endif %}
     </ul>
     <a href="/facturas/generar">➕ Generar Nueva Factura</a>
 </body>
