@@ -1,42 +1,47 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Historial de Facturas - Ninfactura</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; background: #f4f4f4; }
-        h1 { color: #2c3e50; text-align: center; }
-        ul { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 800px; margin: auto; }
-        li { padding: 10px; border-bottom: 1px solid #ddd; }
-        li:last-child { border-bottom: none; }
-        a { background: #3498db; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin-top: 20px; }
-        a:hover { background: #2980b9; }
-    </style>
-</head>
-<body>
-    <h1>📋 Historial de Facturas</h1>
-    <ul>
-        {% for f in facturas %}
-            <li>
-                <strong>Nº: {{ f.numero }}</strong> | 
-                Cliente: {{ f.cliente_nombre }} | 
-                Total: {{ f.total }}€ | 
-                Estado: {{ f.estado }} | 
-                Fecha: {{ f.fecha_emision.strftime('%d/%m/%Y') }}
-            </li>
-        {% else %}
-            <li>No hay facturas aún. ¡<a href="/facturas/generar">Crea la primera!</a></li>
-        {% endfor %}
-        {% if current_user.plan == 'free' %}
-  <form action="/pagos/crear-sesion" method="POST">
-    <button style="background:#635BFF;color:white;padding:15px;border:none;font-size:18px;">
-      🚀 SUSCRÍBETE A PRO – 79€/MES
-    </button>
-  </form>
-{% else %}
-  <p style="color:green;">✅ ERES PRO – Acceso ilimitado</p>
-{% endif %}
-    </ul>
-    <a href="/facturas/generar">➕ Generar Nueva Factura</a>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Historial de Facturas{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-xl shadow-lg p-8">
+    <h2 class="text-3xl font-bold text-indigo-600 mb-6 text-center">📋 Historial de Facturas</h2>
+
+    <!-- BOTÓN SUSCRIPCIÓN -->
+    {% if current_user.plan == 'free' %}
+        <div class="text-center mb-8">
+            <form action="/pagos/crear-sesion" method="POST">
+                <button class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all">
+                    🚀 SUSCRÍBETE A PRO – 79€/MES
+                </button>
+            </form>
+            <p class="text-sm text-gray-500 mt-2">Facturas ilimitadas + envíos automáticos</p>
+        </div>
+    {% else %}
+        <div class="bg-green-50 border border-green-300 rounded-lg p-4 mb-6 text-center">
+            <p class="text-green-700 font-bold text-xl">✅ ERES PRO – Acceso ilimitado</p>
+        </div>
+    {% endif %}
+
+    <!-- LISTA DE FACTURAS -->
+    {% if facturas %}
+        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {% for f in facturas %}
+                <div class="border rounded-lg p-4 hover:shadow-md transition-shadow bg-gray-50">
+                    <p class="font-bold text-indigo-600">#{{ f.numero }}</p>
+                    <p class="text-sm text-gray-700">{{ f.cliente_nombre }}</p>
+                    <p class="font-semibold text-lg">{{ f.total }}€</p>
+                    <p class="text-xs text-gray-500">{{ f.fecha_emision.strftime('%d/%m/%Y') }}</p>
+                    <p class="text-xs font-medium text-blue-600">{{ f.estado|capitalize }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-center text-gray-500 text-lg">No hay facturas aún. ¡<a href="/facturas/generar" class="text-indigo-600 hover:underline">Crea la primera!</a></p>
+    {% endif %}
+
+    <div class="text-center mt-8">
+        <a href="/facturas/generar" class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 inline-block">
+            ➕ Generar Nueva Factura
+        </a>
+    </div>
+</div>
+{% endblock %}
