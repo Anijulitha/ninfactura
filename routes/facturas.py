@@ -96,7 +96,7 @@ def historial():
 def descargar(tipo, numero):
     """Sirve PDF o XML al cliente"""
     if tipo == 'pdf':
-        return send_from_directory('facturas/pdf', f'{numero}.pdf', as_attachment=True)
+        return send_from_directory('factura_templates/facturas/pdf', f'{numero}.pdf', as_attachment=True)
     elif tipo == 'xml':
         return send_from_directory('facturas/xml', f'{numero}.xml', as_attachment=True)
     else:
