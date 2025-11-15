@@ -1,21 +1,30 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 from datetime import datetime
 import uuid
+import urllib.parse
+import os
 
-# IMPORTA db Y Factura DESDE LA RAÍZ (NO DESDE models.factura)
+# IMPORTA db Y Factura
 from __init__ import db
 from models.factura import Factura
 
-# FUNCIONES SIMULADAS SI NO EXISTEN utils
+# FUNCIONES SIMULADAS
 try:
-    from utils.generadores import generar_facturae, generar_pdf, enviar_factura
+    from utils.generadores import generar_facturae, generar_pdf
 except ImportError:
     def generar_facturae(factura):
-        return f"facturas/xml/{factura.numero}.xml"
+        os.makedirs("facturas/xml", exist_ok=True)
+        path = f"facturas/xml/{factura.numero}.xml"
+        with open(path, "w") as f:
+            f.write(f"<factura>{factura.numero}</factura>")
+        return path
+
     def generar_pdf(factura):
-        return f"facturas/pdf/{factura.numero}.pdf"
-    def enviar_factura(factura):
-        print(f"WhatsApp y email enviados para {factura.numero}")
+        os.makedirs("facturas/pdf", exist_ok=True)
+        path = f"facturas/pdf/{factura.numero}.pdf"
+        with open(path, "w") as f:
+            f.write(f"Factura {factura.numero} - {factura.total}€")
+        return path
 
 # BLUEPRINT
 bp = Blueprint('facturas', __name__, url_prefix='/facturas')
@@ -48,13 +57,26 @@ def generar():
         factura.pdf_path = generar_pdf(factura)
         db.session.commit()
 
-        # Enviar
-        enviar_factura(factura)
+        # === ENVÍO POR WHATSAPP (ENLACE DIRECTO) ===
+        telefono = request.form.get('telefono', '').replace(' ', '').replace('-', '')
+        if not telefono.startswith('+'):
+            telefono = '+34' + telefono
+
+        mensaje = f"¡Hola {factura.cliente_nombre}! Aquí tienes tu factura {factura.numero} por {factura.total}€."
+        pdf_url = request.url_root[:-1] + url_for('static', filename=factura.pdf_path.replace('facturas/', ''))
+
+        whatsapp_url = f"https://wa.me/{telefono}?text={urllib.parse.quote(mensaje + ' ' + pdf_url)}"
+
+        # === ENVÍO POR EMAIL (SIMULADO) ===
+        print(f"EMAIL SIMULADO → {factura.cliente_email}: {mensaje}")
+        print(f"WHATSAPP → {whatsapp_url}")
+
+        # === ACTUALIZAR ESTADO ===
         factura.estado = 'enviada'
         db.session.commit()
 
-        flash(f'Factura {numero} generada y enviada!')
-        return redirect(url_for('facturas.historial'))
+        flash(f'Factura {numero} generada! Abre WhatsApp para enviar.')
+        return redirect(whatsapp_url)  # ← ¡REDIRIGE A WHATSAPP!
 
     return render_template('facturas/generar.html')
 
