@@ -98,6 +98,6 @@ def descargar(tipo, numero):
     if tipo == 'pdf':
         return send_from_directory('factura_templates/facturas/pdf', f'{numero}.pdf', as_attachment=True)
     elif tipo == 'xml':
-        return send_from_directory('facturas/xml', f'{numero}.xml', as_attachment=True)
+        return send_from_directory('factura_templates/facturas/xml', f'{numero}.xml', as_attachment=True)
     else:
         return "Archivo no encontrado", 404
