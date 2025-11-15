@@ -1,4 +1,4 @@
-from __init__ import db  # Importa db de la raíz
+from __init__ import db
 from datetime import datetime
 
 class Factura(db.Model):
