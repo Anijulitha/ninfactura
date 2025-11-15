@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 from datetime import datetime
+from flask import send_from_directory
 import uuid
 import urllib.parse
 import os
@@ -57,18 +58,24 @@ def generar():
         factura.pdf_path = generar_pdf(factura)
         db.session.commit()
 
-        # === ENVÍO POR WHATSAPP (ENLACE DIRECTO) ===
-        telefono = request.form.get('telefono', '').replace(' ', '').replace('-', '')
+        # === URL PÚBLICA DEL PDF (USANDO RUTA DESCARGAR) ===
+        pdf_url = url_for('facturas.descargar', tipo='pdf', numero=factura.numero, _external=True)
+
+        # === MENSAJE PARA WHATSAPP ===
+        mensaje = f"¡Hola {factura.cliente_nombre}! Aquí tienes tu factura {factura.numero} por {factura.total}€.\nDescarga el PDF: {pdf_url}"
+
+        # === TELÉFONO LIMPIO ===
+        telefono = request.form.get('telefono', '').replace(' ', '').replace('-', '').lstrip('+')
+        if not telefono.startswith('34'):
+            telefono = '34' + telefono
         if not telefono.startswith('+'):
-            telefono = '+34' + telefono
+            telefono = '+' + telefono
 
-        mensaje = f"¡Hola {factura.cliente_nombre}! Aquí tienes tu factura {factura.numero} por {factura.total}€."
-        pdf_url = request.url_root[:-1] + url_for('static', filename=factura.pdf_path.replace('facturas/', ''))
+        # === REDIRIGIR A WHATSAPP ===
+        whatsapp_url = f"https://wa.me/{telefono}?text={urllib.parse.quote(mensaje)}"
 
-        whatsapp_url = f"https://wa.me/{telefono}?text={urllib.parse.quote(mensaje + ' ' + pdf_url)}"
-
-        # === ENVÍO POR EMAIL (SIMULADO) ===
-        print(f"EMAIL SIMULADO → {factura.cliente_email}: {mensaje}")
+        # === EMAIL SIMULADO ===
+        print(f"EMAIL SIMULADO → {factura.cliente_email}")
         print(f"WHATSAPP → {whatsapp_url}")
 
         # === ACTUALIZAR ESTADO ===
@@ -76,7 +83,7 @@ def generar():
         db.session.commit()
 
         flash(f'Factura {numero} generada! Abre WhatsApp para enviar.')
-        return redirect(whatsapp_url)  # ← ¡REDIRIGE A WHATSAPP!
+        return redirect(whatsapp_url)
 
     return render_template('facturas/generar.html')
 
@@ -84,3 +91,13 @@ def generar():
 def historial():
     facturas = Factura.query.order_by(Factura.fecha_emision.desc()).all()
     return render_template('facturas/historial.html', facturas=facturas)
+
+@bp.route('/descargar/<tipo>/<numero>')
+def descargar(tipo, numero):
+    """Sirve PDF o XML al cliente"""
+    if tipo == 'pdf':
+        return send_from_directory('facturas/pdf', f'{numero}.pdf', as_attachment=True)
+    elif tipo == 'xml':
+        return send_from_directory('facturas/xml', f'{numero}.xml', as_attachment=True)
+    else:
+        return "Archivo no encontrado", 404
