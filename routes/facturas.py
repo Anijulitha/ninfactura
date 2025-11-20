@@ -1,6 +1,5 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, send_from_directory
 from datetime import datetime
-from flask import send_from_directory
 import uuid
 import urllib.parse
 import os
@@ -10,7 +9,7 @@ from __init__ import db
 from models.factura import Factura
 
 # ================================
-# GENERADORES SIMULADOS (hasta que tengas los reales)
+# GENERADORES SIMULADOS
 # ================================
 try:
     from utils.generadores import generar_facturae, generar_pdf
@@ -37,7 +36,7 @@ bp = Blueprint('facturas', __name__, url_prefix='/facturas')
 @bp.route('/generar', methods=['GET', 'POST'])
 def generar():
     if request.method == 'POST':
-        # 1. Generar número único
+        # 1. Número único de factura
         numero = f"F{datetime.now().strftime('%Y%m')}-{str(uuid.uuid4())[:4].upper()}"
 
         base = float(request.form.get('base', 0))
@@ -64,21 +63,15 @@ def generar():
         factura.pdf_path = generar_pdf(factura)
         db.session.commit()
 
-        # 3. ENVÍO A HACIENDA (OPCIONAL – COMENTADO HASTA QUE TENGAS CERTIFICADO)
-        # ------------------------------------------------------------------
-        # from utils.hacienda import HaciendaAPI
-        # try:
-        #     hacienda = HaciendaAPI(
-        #         cert_path=os.getenv('HACIENDA_CERT_PATH'),
-        #         cert_pass=os.getenv('HACIENDA_CERT_PASS')
-        #     )
-        #     codigo = hacienda.enviar_factura(factura.xml_path)
-        #     factura.referencia_hacienda = codigo
-        #     db.session.commit()
-        #     flash(f'¡Factura enviada a Hacienda! Código: {codigo}')
-        # except Exception as e:
-        #     flash(f'Factura generada, pero error con Hacienda: {e}')
-        # ------------------------------------------------------------------
+        # 3. ENVÍO A HACIENDA (SANDBOX - PRUEBAS OFICIALES)
+        try:
+            from utils.hacienda import HaciendaAPI
+            codigo = HaciendaAPI().enviar_factura(factura.xml_path)
+            factura.referencia_hacienda = codigo
+            db.session.commit()
+            flash(f'¡Factura enviada a Hacienda (pruebas)! Código: {codigo}', 'success')
+        except Exception as e:
+            flash(f'Error al enviar a Hacienda (pruebas): {str(e)}', 'warning')
 
         # 4. URL pública del PDF
         pdf_url = url_for('facturas.descargar', tipo='pdf', numero=factura.numero, _external=True)
@@ -86,8 +79,10 @@ def generar():
         # 5. Mensaje WhatsApp
         mensaje = f"¡Hola {factura.cliente_nombre}! Aquí tienes tu factura {factura.numero} por {factura.total}€.\nDescarga el PDF: {pdf_url}"
 
-        # 6. Teléfono limpio
+        # 6. Limpiar teléfono
         telefono = request.form.get('telefono', '').replace(' ', '').replace('-', '').lstrip('+')
+        if telefono.startswith('0'):
+            telefono = telefono[1:]  # quita el 0 inicial
         if not telefono.startswith('34'):
             telefono = '34' + telefono
         telefono = '+' + telefono
@@ -99,7 +94,7 @@ def generar():
         factura.estado = 'enviada'
         db.session.commit()
 
-        flash(f'Factura {numero} generada y lista para enviar por WhatsApp!')
+        flash('¡Factura generada y enviada correctamente!', 'success')
         return redirect(whatsapp_url)
 
     return render_template('facturas/generar.html')
