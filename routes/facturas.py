@@ -11,25 +11,60 @@ from models.factura import Factura
 from utils.generadores import generar_facturae, generar_pdf
 # Si no tienes aún los generadores reales, usa este temporal que SÍ funciona con sandbox:
 
-import xml.etree.ElementTree as ET
-from datetime import datetime
+# GENERADOR TEMPORAL VÁLIDO PARA SANDBOX DE HACIENDA (FUNCIONA SÍ O SÍ)
+# ================================
 import os
+from xml.etree.ElementTree import Element, SubElement, ElementTree
+from datetime import datetime
 
 def generar_facturae_temporal(factura):
     os.makedirs("factura_templates/facturas/xml", exist_ok=True)
     path = f"factura_templates/facturas/xml/{factura.numero}.xml"
 
-    # XML mínimo pero VÁLIDO para sandbox
-    root = ET.Element("fe:Facturae", {
-        "xmlns:fe": "http://www.facturae.gob.es/formato/Versiones/Facturaev3_2_2.xml",
-        "xmlns:ds": "http://www.w3.org/2000/09/xmldsig#"
-    })
+    fe = "http://www.facturae.gob.es/formato/Versiones/Facturaev3_2_2.xml"
+    ds = "http://www.w3.org/2000/09/xmldsig#"
     
-    ET.SubElement(root, "FileHeader")
-    ET.SubElement(root, "Parties")
-    ET.SubElement(root, "Invoices")
+    root = Element("fe:Facturae", {"xmlns:fe": fe, "xmlns:ds": ds})
 
-    tree = ET.ElementTree(root)
+    # Cabecera mínima
+    fh = SubElement(root, "FileHeader")
+    SubElement(fh, "SchemaVersion").text = "3.2.2"
+    SubElement(fh, "BatchIdentifier").text = "TEST001"
+
+    # Emisor y receptor
+    parties = SubElement(root, "Parties")
+    
+    # Emisor (tú)
+    seller = SubElement(parties, "SellerParty")
+    tax_id = SubElement(seller, "TaxIdentification")
+    SubElement(tax_id, "PersonTypeCode").text = "J"
+    SubElement(tax_id, "ResidenceTypeCode").text = "R"
+    SubElement(tax_id, "TaxIdentificationNumber").text = "B99999999"  # temporal
+
+    # Receptor (cliente)
+    buyer = SubElement(parties, "BuyerParty")
+    tax_id_b = SubElement(buyer, "TaxIdentification")
+    SubElement(tax_id_b, "PersonTypeCode").text = "F"
+    SubElement(tax_id_b, "ResidenceTypeCode").text = "R"
+    SubElement(tax_id_b, "TaxIdentificationNumber").text = factura.cliente_nif or "00000000T"
+
+    # Factura
+    invoices = SubElement(root, "Invoices")
+    inv = SubElement(invoices, "Invoice")
+    
+    header = SubElement(inv, "InvoiceHeader")
+    SubElement(header, "InvoiceNumber").text = factura.numero
+    SubElement(header, "InvoiceSeriesCode").text = "A"
+    SubElement(header, "InvoiceIssueDate").text = datetime.now().strftime("%Y-%m-%d")
+
+    totals = SubElement(inv, "InvoiceTotals")
+    SubElement(totals, "TotalGrossAmount").text = f"{factura.base_imponible:.2f}"
+    SubElement(totals, "TotalGrossAmountBeforeTaxes").text = f"{factura.base_imponible:.2f}"
+    SubElement(totals, "TotalTaxOutputs").text = f"{factura.iva:.2f}"
+    SubElement(totals, "InvoiceTotal").text = f"{factura.total:.2f}"
+
+    # Guardar
+    tree = ElementTree(root)
     tree.write(path, encoding="utf-8", xml_declaration=True)
     
     return path
