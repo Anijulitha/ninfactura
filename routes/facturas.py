@@ -8,8 +8,7 @@ import os
 from __init__ import db
 from models.factura import Factura
 
-from utils.generadores import generar_facturae, generar_pdf
-# Si no tienes aún los generadores reales, usa este temporal que SÍ funciona con sandbox:
+from utils.generadores import generar_pdf
 
 # GENERADOR TEMPORAL VÁLIDO PARA SANDBOX DE HACIENDA (FUNCIONA SÍ O SÍ)
 # ================================
@@ -99,20 +98,20 @@ def generar():
         db.session.add(factura)
         db.session.commit()
 
-       # 2. Generar PDF + XML (usa el temporal hasta que tengas el real)
-        factura.xml_path = generar_facturae_temporal(factura)   # ← esta línea
-        factura.pdf_path = generar_pdf(factura)
-        db.session.commit()
+       # 2. Generar PDF + XML (temporal)
+       # factura.xml_path = generar_facturae_temporal(factura)   # comentado por ahora
+       factura.pdf_path = generar_pdf(factura)   # ← esta SÍ la dejamos activa
+       db.session.commit()  
 
         # 3. ENVÍO A HACIENDA (SANDBOX - PRUEBAS OFICIALES)
-        try:
-            from utils.hacienda import HaciendaAPI
-            codigo = HaciendaAPI().enviar_factura(factura.xml_path)
-            factura.referencia_hacienda = codigo
-            db.session.commit()
-            flash(f'¡Factura enviada a Hacienda (pruebas)! Código: {codigo}', 'success')
-        except Exception as e:
-            flash(f'Error al enviar a Hacienda (pruebas): {str(e)}', 'warning')
+        #try:
+            #from utils.hacienda import HaciendaAPI
+            #codigo = HaciendaAPI().enviar_factura(factura.xml_path)
+            #factura.referencia_hacienda = codigo
+            #db.session.commit()
+            #flash(f'¡Factura enviada a Hacienda (pruebas)! Código: {codigo}', 'success')
+        #except Exception as e:
+            #flash(f'Error al enviar a Hacienda (pruebas): {str(e)}', 'warning')
 
         # 4. URL pública del PDF
         pdf_url = url_for('facturas.descargar', tipo='pdf', numero=factura.numero, _external=True)
