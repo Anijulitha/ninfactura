@@ -10,3 +10,4 @@ Flask-Mail==0.10.0
 requests==2.31.0
 pyOpenSSL==24.2.1
 cryptography==43.0.1
+weasyprint==61.2
