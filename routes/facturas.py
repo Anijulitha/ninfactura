@@ -143,7 +143,7 @@ def generar():
 # ================================
 # HISTORIAL Y DESCARGA
 # ================================
-@bp.route('/facturas/descargar/<tipo>/<numero>')
+@bp.route('/descargar/<tipo>/<numero>')
 def descargar(tipo, numero):
     factura = Factura.query.filter_by(numero=numero).first_or_404()
     
