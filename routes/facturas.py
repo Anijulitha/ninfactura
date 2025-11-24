@@ -99,9 +99,9 @@ def generar():
         db.session.commit()
 
        # 2. Generar PDF + XML (temporal)
-       # factura.xml_path = generar_facturae_temporal(factura)   # comentado por ahora
-       factura.pdf_path = generar_pdf(factura)   # ← esta SÍ la dejamos activa
-       db.session.commit()  
+        # factura.xml_path = generar_facturae_temporal(factura)
+        factura.pdf_path = generar_pdf(factura)          # ← 8 espacios o 2 tabs como las líneas de arriba
+        db.session.commit()                             # ← misma indentación 
 
         # 3. ENVÍO A HACIENDA (SANDBOX - PRUEBAS OFICIALES)
         #try:
