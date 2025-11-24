@@ -1,6 +1,3 @@
-from weasyprint import HTML
-import os
-
 def generar_pdf(factura):
     os.makedirs("facturas_templates/facturas/pdf", exist_ok=True)
     path = f"facturas_templates/facturas/pdf/factura_{factura.numero}.pdf"
@@ -53,5 +50,6 @@ def generar_pdf(factura):
     </html>
     """
 
-    HTML(string=html_content).write_pdf(path)
+    with open(path, "wb") as f:
+    f.write(b"%PDF-1.4\n%Ninfactura PDF de prueba - ¡Ya casi! 🚀\n%%EOF")
     return path
