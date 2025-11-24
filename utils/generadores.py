@@ -30,6 +30,6 @@ def generar_pdf(factura):
     # Aquí pondrás ReportLab o WeasyPrint cuando quieras el PDF bonito
     # De momento creamos un archivo vacío para que la descarga funcione
     with open(path, "wb") as f:
-        f.write(b"%PDF-1.4\n%Esto es un PDF de prueba generado por Ninfactura 🚀\n")
+        f.write(b"%PDF-1.4\nEsto es un PDF de prueba generado por Ninfactura\n%%EOF\n")
     
     return path
