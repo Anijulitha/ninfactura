@@ -143,16 +143,17 @@ def generar():
 # ================================
 # HISTORIAL Y DESCARGA
 # ================================
-@bp.route('/historial')
-def historial():
-    facturas = Factura.query.order_by(Factura.fecha_emision.desc()).all()
-    return render_template('facturas/historial.html', facturas=facturas)
-
-@bp.route('/descargar/<tipo>/<numero>')
+@bp.route('/facturas/descargar/<tipo>/<numero>')
 def descargar(tipo, numero):
-    if tipo == 'pdf':
-        return send_from_directory('factura_templates/facturas/pdf', f'{numero}.pdf', as_attachment=True)
-    elif tipo == 'xml':
-        return send_from_directory('factura_templates/facturas/xml', f'{numero}.xml', as_attachment=True)
+    factura = Factura.query.filter_by(numero=numero).first_or_404()
+    
+    if tipo == 'pdf' and factura.pdf_path:
+        return send_from_directory(os.path.dirname(factura.pdf_path), 
+                                 os.path.basename(factura.pdf_path), 
+                                 as_attachment=True)
+    elif tipo == 'xml' and factura.xml_path:
+        return send_from_directory(os.path.dirname(factura.xml_path), 
+                                 os.path.basename(factura.xml_path), 
+                                 as_attachment=True)
     else:
         return "Archivo no encontrado", 404
