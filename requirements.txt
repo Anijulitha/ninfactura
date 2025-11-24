@@ -9,3 +9,4 @@ stripe==10.11.0
 Flask-Mail==0.10.0
 requests==2.31.0
 cryptography==42.0.8
+pyOpenSSL==24.2.1
