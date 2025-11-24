@@ -72,8 +72,7 @@ def generar_facturae_temporal(factura):
 # ================================
 # BLUEPRINT
 # ================================
-bp = Blueprint('facturas', __name__, url_prefix='/')
-bp = Blueprint('facturas', _name_, url_prefix='')
+bp = Blueprint('facturas', __name__, url_prefix='')
 
 @bp.route('/generar', methods=['GET', 'POST'])
 def generar():
