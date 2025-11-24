@@ -25,7 +25,7 @@ def create_app():
     except ImportError:
         class Config:
             SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-key-super-segura-cambia-esto-en-produccion'
-            SQLALCHEMY_DATABASE_URI = 'sqlite:///ninfatura.db'
+            SQLALCHEMY_DATABASE_URI = 'sqlite:///ninfactura.db'
             SQLALCHEMY_TRACK_MODIFICATIONS = False
             UPLOAD_FOLDER = 'uploads'
             MAX_CONTENT_LENGTH = 16 * 1024 * 1024
@@ -93,7 +93,7 @@ def create_app():
             <div class="max-w-4xl mx-auto text-center">
                 <div class="mb-10">
                     <h1 class="text-6xl md:text-7xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent animate-pulse">
-                        🚀 NINFATURA
+                        🚀 NINFACTURA
                     </h1>
                     <p class="text-2xl md:text-3xl text-gray-700 mt-4">Facturación fácil, rápida y profesional</p>
                 </div>
