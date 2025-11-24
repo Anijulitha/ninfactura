@@ -18,8 +18,8 @@ from xml.etree.ElementTree import Element, SubElement, ElementTree
 from datetime import datetime
 
 def generar_facturae_temporal(factura):
-    os.makedirs("factura_templates/facturas/xml", exist_ok=True)
-    path = f"factura_templates/facturas/xml/{factura.numero}.xml"
+    os.makedirs("facturas_templates/facturas/xml", exist_ok=True)
+    path = f"facturas_templates/facturas/xml/{factura.numero}.xml"
 
     fe = "http://www.facturae.gob.es/formato/Versiones/Facturaev3_2_2.xml"
     ds = "http://www.w3.org/2000/09/xmldsig#"
