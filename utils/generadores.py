@@ -26,13 +26,35 @@ def generar_facturae_temporal(factura):
     return path
 
 def generar_pdf(factura):
-    os.makedirs("factura_templates/facturas/pdf", exist_ok=True)
-    path = f"factura_templates/facturas/pdf/factura_{factura.numero}.pdf"
+    os.makedirs("facturas_templates/facturas/pdf", exist_ok=True)
+    path = f"facturas_templates/facturas/pdf/factura_{factura.numero}.pdf"
 
-    # PDF temporal válido
-    contenido = b"%PDF-1.4\n1 0 obj\n<</Type /Catalog /Pages 2 0 R>>\nendobj\n2 0 obj\n<</Type /Pages /Kids [3 0 R] /Count 1>>\nendobj\n3 0 obj\n<</Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources <</Font <</F1 5 0 R>>>>>>\nendobj\n4 0 obj\n<</Length 250>>\nstream\nBT /F1 24 Tf 100 700 Td (Factura Ninfactura) Tj\n100 650 Td (Numero: {numero}) Tj\n100 600 Td (Total: {total:.2f} EUR) Tj ET\nendstream\nendobj\n5 0 obj\n<</Type /Font /Subtype /Type1 /BaseFont /Helvetica>> endobj\nxref\n0 6\n0000000000 65535 f \n0000000010 00000 n \n0000000074 00000 n \n0000000125 00000 n \n0000000285 00000 n \n0000000475 00000 n \ntrailer <</Size 6 /Root 1 0 R>>\nstartxref\n600\n%%EOF\n"
+    contenido = f"""%PDF-1.4
+1 0 obj <</Type /Catalog /Pages 2 0 R>> endobj
+2 0 obj <</Type /Pages /Kids [3 0 R] /Count 1>> endobj
+3 0 obj <</Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources <</Font <</F1 5 0 R>>>>>> endobj
+4 0 obj <</Length 600>> stream
+BT /F1 32 Tf 200 780 Td (NINFACTURA) Tj
+   /F1 24 Tf 180 730 Td (Factura {factura.numero}) Tj
+   50 680 Td (Cliente: {factura.cliente_nombre}) Tj
+   50 650 Td (NIF: {factura.cliente_nif or '-'}) Tj
+   50 600 Td (Concepto: Servicios Ninfactura) Tj
+   50 550 Td (Base imponible: {factura.base_imponible:.2f} €) Tj
+   50 520 Td (IVA 21%: {factura.iva:.2f} €) Tj
+   /F1 32 Tf 50 470 Td (TOTAL: {factura.total:.2f} €) Tj
+   /F1 18 Tf 50 400 Td (¡Gracias por confiar en Ninfactura! 🚀💜) Tj
+ET
+endstream endobj
+5 0 obj <</Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold>> endobj
+xref 0 6
+0000000000 65535 f 
+0000000010 00000 n 
+0000000074 00000 n 
+0000000125 00000 n 
+0000000285 00000 n 
+0000000700 00000 n 
+trailer <</Size 6 /Root 1 0 R>> startxref 900 %%EOF""".encode('latin-1')
 
     with open(path, "wb") as f:
-        f.write(contenido.replace(b"{numero}", factura.numero.encode()).replace(b"{total}", str(factura.total).encode()))
-
+        f.write(contenido)
     return path
