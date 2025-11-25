@@ -5,73 +5,16 @@ import urllib.parse
 import os
 
 # IMPORTA db y Factura
-from __init__ import db
+from _init_ import db
 from models.factura import Factura
 
+# IMPORT DE FUNCIONES (YA NO HAY ERROR)
 from utils.generadores import generar_pdf, generar_facturae_temporal
-
-# GENERADOR TEMPORAL VÁLIDO PARA SANDBOX DE HACIENDA (FUNCIONA SÍ O SÍ)
-# ================================
-import os
-from xml.etree.ElementTree import Element, SubElement, ElementTree
-from datetime import datetime
-
-def generar_facturae_temporal(factura):
-    os.makedirs("facturas_templates/facturas/xml", exist_ok=True)
-    path = f"facturas_templates/facturas/xml/{factura.numero}.xml"
-
-    fe = "http://www.facturae.gob.es/formato/Versiones/Facturaev3_2_2.xml"
-    ds = "http://www.w3.org/2000/09/xmldsig#"
-    
-    root = Element("fe:Facturae", {"xmlns:fe": fe, "xmlns:ds": ds})
-
-    # Cabecera mínima
-    fh = SubElement(root, "FileHeader")
-    SubElement(fh, "SchemaVersion").text = "3.2.2"
-    SubElement(fh, "BatchIdentifier").text = "TEST001"
-
-    # Emisor y receptor
-    parties = SubElement(root, "Parties")
-    
-    # Emisor (tú)
-    seller = SubElement(parties, "SellerParty")
-    tax_id = SubElement(seller, "TaxIdentification")
-    SubElement(tax_id, "PersonTypeCode").text = "J"
-    SubElement(tax_id, "ResidenceTypeCode").text = "R"
-    SubElement(tax_id, "TaxIdentificationNumber").text = "B99999999"  # temporal
-
-    # Receptor (cliente)
-    buyer = SubElement(parties, "BuyerParty")
-    tax_id_b = SubElement(buyer, "TaxIdentification")
-    SubElement(tax_id_b, "PersonTypeCode").text = "F"
-    SubElement(tax_id_b, "ResidenceTypeCode").text = "R"
-    SubElement(tax_id_b, "TaxIdentificationNumber").text = factura.cliente_nif or "00000000T"
-
-    # Factura
-    invoices = SubElement(root, "Invoices")
-    inv = SubElement(invoices, "Invoice")
-    
-    header = SubElement(inv, "InvoiceHeader")
-    SubElement(header, "InvoiceNumber").text = factura.numero
-    SubElement(header, "InvoiceSeriesCode").text = "A"
-    SubElement(header, "InvoiceIssueDate").text = datetime.now().strftime("%Y-%m-%d")
-
-    totals = SubElement(inv, "InvoiceTotals")
-    SubElement(totals, "TotalGrossAmount").text = f"{factura.base_imponible:.2f}"
-    SubElement(totals, "TotalGrossAmountBeforeTaxes").text = f"{factura.base_imponible:.2f}"
-    SubElement(totals, "TotalTaxOutputs").text = f"{factura.iva:.2f}"
-    SubElement(totals, "InvoiceTotal").text = f"{factura.total:.2f}"
-
-    # Guardar
-    tree = ElementTree(root)
-    tree.write(path, encoding="utf-8", xml_declaration=True)
-    
-    return path
 
 # ================================
 # BLUEPRINT
 # ================================
-bp = Blueprint('facturas', __name__, url_prefix='')
+bp = Blueprint('facturas', _name_, url_prefix='')
 
 @bp.route('/generar', methods=['GET', 'POST'])
 def generar():
@@ -98,20 +41,20 @@ def generar():
         db.session.add(factura)
         db.session.commit()
 
-       # 2. Generar PDF + XML (temporal)
-        # factura.xml_path = generar_facturae_temporal(factura)
-        factura.pdf_path = generar_pdf(factura)          # ← 8 espacios o 2 tabs como las líneas de arriba
-        db.session.commit()                             # ← misma indentación 
+        # 2. Generar PDF + XML
+        factura.xml_path = generar_facturae_temporal(factura)  # ← esta línea corregida
+        factura.pdf_path = generar_pdf(factura)
+        db.session.commit()
 
         # 3. ENVÍO A HACIENDA (SANDBOX - PRUEBAS OFICIALES)
-        #try:
-            #from utils.hacienda import HaciendaAPI
-            #codigo = HaciendaAPI().enviar_factura(factura.xml_path)
-            #factura.referencia_hacienda = codigo
-            #db.session.commit()
-            #flash(f'¡Factura enviada a Hacienda (pruebas)! Código: {codigo}', 'success')
-        #except Exception as e:
-            #flash(f'Error al enviar a Hacienda (pruebas): {str(e)}', 'warning')
+        try:
+            from utils.hacienda import HaciendaAPI
+            codigo = HaciendaAPI().enviar_factura(factura.xml_path)
+            factura.referencia_hacienda = codigo
+            db.session.commit()
+            flash(f'¡Factura enviada a Hacienda (pruebas)! Código: {codigo}', 'success')
+        except Exception as e:
+            flash(f'Error al enviar a Hacienda (pruebas): {str(e)}', 'warning')
 
         # 4. URL pública del PDF
         pdf_url = url_for('facturas.descargar', tipo='pdf', numero=factura.numero, _external=True)
@@ -142,15 +85,20 @@ def generar():
 # ================================
 # HISTORIAL Y DESCARGA
 # ================================
+@bp.route('/historial')
+def historial():
+    facturas = Factura.query.order_by(Factura.fecha_emision.desc()).all()
+    return render_template('facturas/historial.html', facturas=facturas)
+
 @bp.route('/descargar/<tipo>/<numero>')
 def descargar(tipo, numero):
     factura = Factura.query.filter_by(numero=numero).first_or_404()
     
-    if tipo == 'pdf' and factura.pdf_path:
+    if tipo == 'pdf':
         return send_from_directory(os.path.dirname(factura.pdf_path), 
                                  os.path.basename(factura.pdf_path), 
                                  as_attachment=True)
-    elif tipo == 'xml' and factura.xml_path:
+    elif tipo == 'xml':
         return send_from_directory(os.path.dirname(factura.xml_path), 
                                  os.path.basename(factura.xml_path), 
                                  as_attachment=True)
