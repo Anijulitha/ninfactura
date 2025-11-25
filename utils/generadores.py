@@ -33,16 +33,16 @@ def generar_pdf(factura):
 1 0 obj <</Type /Catalog /Pages 2 0 R>> endobj
 2 0 obj <</Type /Pages /Kids [3 0 R] /Count 1>> endobj
 3 0 obj <</Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources <</Font <</F1 5 0 R>>>>>> endobj
-4 0 obj <</Length 600>> stream
-BT /F1 32 Tf 200 780 Td (NINFACTURA) Tj
-   /F1 24 Tf 180 730 Td (Factura {factura.numero}) Tj
-   50 680 Td (Cliente: {factura.cliente_nombre}) Tj
-   50 650 Td (NIF: {factura.cliente_nif or '-'}) Tj
+4 0 obj <</Length 700>> stream
+BT /F1 36 Tf 180 780 Td (NINFACTURA) Tj
+   /F1 26 Tf 150 730 Td (Factura {factura.numero}) Tj
+   /F1 20 Tf 50 680 Td (Cliente: {factura.cliente_nombre}) Tj
+   50 650 Td (NIF: {factura.cliente_nif or 'Pendiente'}) Tj
    50 600 Td (Concepto: Servicios Ninfactura) Tj
    50 550 Td (Base imponible: {factura.base_imponible:.2f} €) Tj
    50 520 Td (IVA 21%: {factura.iva:.2f} €) Tj
-   /F1 32 Tf 50 470 Td (TOTAL: {factura.total:.2f} €) Tj
-   /F1 18 Tf 50 400 Td (¡Gracias por confiar en Ninfactura! 🚀💜) Tj
+   /F1 36 Tf 50 460 Td (TOTAL: {factura.total:.2f} €) Tj
+   /F1 18 Tf 50 380 Td (Gracias por confiar en Ninfactura! 🚀💜) Tj
 ET
 endstream endobj
 5 0 obj <</Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold>> endobj
@@ -53,7 +53,7 @@ xref 0 6
 0000000125 00000 n 
 0000000285 00000 n 
 0000000700 00000 n 
-trailer <</Size 6 /Root 1 0 R>> startxref 900 %%EOF""".encode('latin-1')
+trailer <</Size 6 /Root 1 0 R>> startxref 1000 %%EOF""".encode('utf-8')   # ← AQUÍ EL CAMBIO: utf-8 en vez de latin-1
 
     with open(path, "wb") as f:
         f.write(contenido)
