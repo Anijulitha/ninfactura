@@ -1,136 +1,97 @@
+from flask import Blueprint, render_template, request, redirect, url_for, flash, send_from_directory
+from datetime import datetime
+import uuid
+import urllib.parse
 import os
-import sys
 
-# sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# IMPORTA db y Factura
+from __init__ import db
+from models.factura import Factura
 
-from flask import Flask, redirect, url_for
-from flask_login import current_user
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager
+# IMPORT DE FUNCIONES
+from utils.generadores import generar_pdf, generar_facturae_temporal
 
-# === EXTENSIONES GLOBALES ===
-db = SQLAlchemy()
-login_manager = LoginManager()
-login_manager.login_view = 'auth.login'
+# ================================
+# BLUEPRINT CON PREFIX CORRECTO
+# ================================
+bp = Blueprint('facturas', __name__, url_prefix='/facturas')  # ¡¡AQUÍ ESTABA EL PROBLEMA!!
 
-def create_app():
-    app = Flask(__name__, 
-                template_folder='factura_templates',
-                static_folder='static')
+@bp.route('/', methods=['GET', 'POST'])  # ← ahora /facturas/ lleva directo al generador
+def generar():
+    if request.method == 'POST':
+        # 1. Número único de factura
+        numero = f"F{datetime.now().strftime('%Y%m')}-{str(uuid.uuid4())[:4].upper()}"
 
-    # === CONFIGURACIÓN ===
-    try:
-        from config import Config
-        app.config.from_object(Config)
-    except ImportError:
-        class Config:
-            SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-key-super-segura-cambia-esto-en-produccion'
-            SQLALCHEMY_DATABASE_URI = 'sqlite:///ninfactura.db'
-            SQLALCHEMY_TRACK_MODIFICATIONS = False
-            UPLOAD_FOLDER = 'uploads'
-            MAX_CONTENT_LENGTH = 16 * 1024 * 1024
-        app.config.from_object(Config)
+        base = float(request.form.get('base', 0))
+        iva = base * 0.21
+        total = base + iva
 
-    # === STRIPE CONFIG ===
-    import stripe
-    stripe.api_key = app.config.get('STRIPE_SECRET_KEY')
-    app.config['STRIPE_PUBLIC_KEY'] = os.environ.get('STRIPE_PUBLISHABLE_KEY')
-    app.config['STRIPE_PRICE_ID'] = os.environ.get('STRIPE_PRICE_ID')
-    app.config['STRIPE_WEBHOOK_SECRET'] = os.environ.get('STRIPE_WEBHOOK_SECRET')
+        factura = Factura(
+            numero=numero,
+            cliente_nombre=request.form.get('nombre', 'Anónimo'),
+            cliente_nif=request.form.get('nif', '00000000A'),
+            cliente_email=request.form.get('email', 'test@example.com'),
+            cliente_telefono=request.form.get('telefono', '+34600123456'),
+            base_imponible=base,
+            iva=iva,
+            total=total,
+            estado='generada',
+            empresa=request.form.get('empresa', 'Anónima')
+        )
+        db.session.add(factura)
+        db.session.commit()
 
-    # === INICIALIZAR EXTENSIONES ===
-    db.init_app(app)
-    login_manager.init_app(app)
+        # 2. Generar PDF + XML
+        factura.xml_path = generar_facturae_temporal(factura)
+        factura.pdf_path = generar_pdf(factura)
+        db.session.commit()
 
-    # === USER LOADER ===
-    from models.user import User
+        # 3. URL pública del PDF
+        pdf_url = url_for('facturas.descargar', tipo='pdf', numero=factura.numero, _external=True)
 
-    @login_manager.user_loader
-    def load_user(user_id):
-        return User.query.get(int(user_id))
+        # 4. Mensaje WhatsApp
+        mensaje = f"¡Hola {factura.cliente_nombre}! Aquí tienes tu factura {factura.numero} por {factura.total:.2f}€.\nDescarga el PDF: {pdf_url}"
 
-    # === REGISTRAR BLUEPRINTS ===
-    try:
-        from routes.auth import bp as auth_bp
-        app.register_blueprint(auth_bp, url_prefix='/auth')
-    except ImportError as e:
-        print(f"⚠️ No se pudo importar auth: {e}")
+        # 5. Limpiar teléfono
+        telefono = request.form.get('telefono', '').replace(' ', '').replace('-', '').lstrip('+')
+        if telefono.startswith('0'):
+            telefono = telefono[1:]
+        if not telefono.startswith('34'):
+            telefono = '34' + telefono
+        telefono = '+' + telefono
 
-    try:
-        from routes.facturas import bp as facturas_bp
-        app.register_blueprint(facturas_bp, url_prefix='/facturas')
-    except ImportError as e:
-        print(f"⚠️ Error importando facturas: {e}")
+        # 6. Redirigir a WhatsApp
+        whatsapp_url = f"https://wa.me/{telefono}?text={urllib.parse.quote(mensaje)}"
 
-    try:
-        from routes.pagos import bp as pagos_bp
-        app.register_blueprint(pagos_bp, url_prefix='/pagos')
-    except ImportError as e:
-        print(f"⚠️ Error importando pagos: {e}")
+        # 7. Actualizar estado
+        factura.estado = 'enviada'
+        db.session.commit()
 
-    try:
-        from routes.webhook import bp as webhook_bp
-        app.register_blueprint(webhook_bp)
-    except ImportError as e:
-        print(f"⚠️ Error importando webhook: {e}")
+        flash('¡Factura generada y enviada correctamente!', 'success')
+        return redirect(whatsapp_url)
 
-    @app.route('/')
-    def home():
-        if current_user.is_authenticated:
-            return redirect(url_for('facturas.historial'))
-        return '''
-        <!DOCTYPE html>
-        <html lang="es">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Ninfatura - Facturación Fácil</title>
-            <script src="https://cdn.tailwindcss.com"></script>
-            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-            <style> body { font-family: 'Inter', sans-serif; } </style>
-        </head>
-        <body class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 min-h-screen flex items-center justify-center p-6">
-            <div class="max-w-4xl mx-auto text-center">
-                <div class="mb-10">
-                    <h1 class="text-6xl md:text-7xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent animate-pulse">
-                        🚀 NINFACTURA
-                    </h1>
-                    <p class="text-2xl md:text-3xl text-gray-700 mt-4">Facturación fácil, rápida y profesional</p>
-                </div>
+    return render_template('facturas/generar.html')
 
-                <div class="grid md:grid-cols-3 gap-6 mb-12">
-                    <div class="bg-white p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all">
-                        <div class="text-4xl mb-3">📄</div>
-                        <h3 class="text-xl font-bold text-indigo-600">Genera facturas</h3>
-                        <p class="text-gray-600">En 30 segundos</p>
-                    </div>
-                    <div class="bg-white p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all">
-                        <div class="text-4xl mb-3">📱</div>
-                        <h3 class="text-xl font-bold text-purple-600">Envía por WhatsApp</h3>
-                        <p class="text-gray-600">PDF + XML listo</p>
-                    </div>
-                    <div class="bg-white p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-all">
-                        <div class="text-4xl mb-3">💎</div>
-                        <h3 class="text-xl font-bold text-pink-600">Plan PRO</h3>
-                        <p class="text-gray-600">79€/mes ilimitado</p>
-                    </div>
-                </div>
 
-                <div class="space-x-4">
-                    <a href="/auth/register" class="inline-block bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all">
-                        🚀 Empezar GRATIS
-                    </a>
-                    <a href="/auth/login" class="inline-block bg-white text-indigo-600 border-2 border-indigo-600 px-8 py-4 rounded-xl font-bold text-lg hover:bg-indigo-50 transform hover:scale-105 transition-all">
-                        🔑 Ya tengo cuenta
-                    </a>
-                </div>
-
-                <p class="text-sm text-gray-500 mt-10">
-                    <strong>0€ para siempre</strong> en plan FREE • Facturas limitadas
-                </p>
-            </div>
-        </body>
-        </html>
-        '''
-
-    return app
+# ================================
+# DESCARGA PDF Y XML
+# ================================
+@bp.route('/descargar/<tipo>/<numero>')
+def descargar(tipo, numero):
+    factura = Factura.query.filter_by(numero=numero).first_or_404()
+    
+    if tipo == 'pdf' and factura.pdf_path:
+        return send_from_directory(
+            os.path.dirname(factura.pdf_path),
+            os.path.basename(factura.pdf_path),
+            as_attachment=True
+        )
+    elif tipo == 'xml' and factura.xml_path:
+        return send_from_directory(
+            os.path.dirname(factura.xml_path),
+            os.path.basename(factura.xml_path),
+            as_attachment=True
+        )
+    else:
+        flash("Archivo no encontrado", "danger")
+        return redirect(url_for('facturas.generar'))
