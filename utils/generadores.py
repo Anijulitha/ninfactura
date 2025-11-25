@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 
-def generar_facturae(factura):
+def generar_facturae_temporal(factura):
     os.makedirs("factura_templates/facturas/xml", exist_ok=True)
     path = f"factura_templates/facturas/xml/{factura.numero}.xml"
 
