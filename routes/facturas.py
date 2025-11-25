@@ -5,7 +5,7 @@ import urllib.parse
 import os
 
 # IMPORTA db y Factura
-from _init_ import db
+from __init__ import db
 from models.factura import Factura
 
 # IMPORT DE FUNCIONES (YA NO HAY ERROR)
@@ -14,7 +14,7 @@ from utils.generadores import generar_pdf, generar_facturae_temporal
 # ================================
 # BLUEPRINT
 # ================================
-bp = Blueprint('facturas', _name_, url_prefix='')
+bp = Blueprint('facturas', __name__, url_prefix='')
 
 @bp.route('/generar', methods=['GET', 'POST'])
 def generar():
