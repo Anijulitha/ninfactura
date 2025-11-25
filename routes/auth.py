@@ -33,7 +33,7 @@ def login():
         user = User.query.filter_by(email=email).first()
         if user and user.check_password(password):
             login_user(user)
-            return redirect(url_for('facturas.generar'))
+            return redirect('/facturas')
         flash('Credenciales inválidas')
     return render_template('auth/login.html')
 
