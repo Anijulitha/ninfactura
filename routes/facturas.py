@@ -8,7 +8,7 @@ import os
 from __init__ import db
 from models.factura import Factura
 
-from utils.generadores import generar_pdf
+from utils.generadores import generar_pdf, generar_facturae_temporal
 
 # GENERADOR TEMPORAL VÁLIDO PARA SANDBOX DE HACIENDA (FUNCIONA SÍ O SÍ)
 # ================================
