@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 
-# ======================= XML PARA HACIENDA (sandbox) =======================
+# ======================= XML PARA HACIENDA =======================
 def generar_facturae_temporal(factura):
     os.makedirs("factura_templates/facturas/xml", exist_ok=True)
     path = f"factura_templates/facturas/xml/{factura.numero}.xml"
@@ -26,9 +26,8 @@ def generar_facturae_temporal(factura):
     return path
 
 
-# ============================= PDF BONITO =============================
+# ========================== PDF BONITO ==========================
 def generar_pdf(factura):
-    # ¡¡AQUÍ ESTABA EL ERROR!! → ahora mismo nombre que el XML
     os.makedirs("factura_templates/facturas/pdf", exist_ok=True)
     path = f"factura_templates/facturas/pdf/factura_{factura.numero}.pdf"
 
@@ -43,11 +42,11 @@ BT
 /F1 28 Tf 180 730 Td (Factura {factura.numero}) Tj
 /F1 20 Tf 80 680 Td (Cliente: {factura.cliente_nombre}) Tj
 80 650 Td (NIF: {factura.cliente_nif or 'Pendiente'}) Tj
-80 600 Td (Concepto: Servicios de facturación Ninfactura) Tj
+80 600 Td (Concepto: Servicios de facturacion Ninfactura) Tj
 80 550 Td (Base imponible: {factura.base_imponible:.2f} EUR) Tj
 80 520 Td (IVA 21%: {factura.iva:.2f} EUR) Tj
 /F2 40 Tf 80 460 Td (TOTAL: {factura.total:.2f} EUR) Tj
-/F1 18 Tf 80 400 Td (¡Gracias por confiar en Ninfactura! 🚀💜) Tj
+/F1 18 Tf 80 400 Td (Gracias por confiar en Ninfactura!) Tj
 80 370 Td (www.ninfactura.onrender.com) Tj
 ET
 endstream endobj
@@ -65,7 +64,7 @@ xref
 trailer <</Size 7 /Root 1 0 R>>
 startxref
 1450
-%%EOF""".encode('latin-1')
+%%EOF""".encode('latin-1')   # ← sin emojis, todo latin-1 compatible
 
     with open(path, "wb") as f:
         f.write(contenido)
