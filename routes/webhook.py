@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_login import current_user
 import stripe
-from __init__ import db
+from ninfacturanuevo_app import db
 from models.user import User
 
 bp = Blueprint('webhook', __name__)
