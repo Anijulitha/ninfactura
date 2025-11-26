@@ -9,7 +9,7 @@ from ninfacturanuevo_app import db
 from models.factura import Factura
 
 # IMPORT DE FUNCIONES (YA NO HAY ERROR)
-from utils.generadores import generar_pdf, generar_facturae_temporal
+from utils.generadores import generar_pdf
 
 # ================================
 # BLUEPRINT
@@ -42,7 +42,7 @@ def generar():
         db.session.commit()
 
         # 2. Generar PDF + XML
-        factura.xml_path = generar_facturae_temporal(factura)  # ← esta línea corregida
+        #factura.xml_path = generar_facturae_temporal(factura)  # ← esta línea corregida
         factura.pdf_path = generar_pdf(factura)
         db.session.commit()
 
