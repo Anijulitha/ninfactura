@@ -85,3 +85,4 @@ def create_app(*args, **kwargs):
         '''
 
     return app
+app = create_app()
