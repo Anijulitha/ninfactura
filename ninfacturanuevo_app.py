@@ -9,7 +9,7 @@ db = SQLAlchemy()
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
 
-def create_app():
+def create_app(*args, **kwargs):
     app = Flask(__name__, 
                 template_folder='factura_templates',
                 static_folder='static')
