@@ -1,4 +1,4 @@
-from __init__ import db
+from ninfacturanuevo_app import db
 from datetime import datetime
 
 class Factura(db.Model):
