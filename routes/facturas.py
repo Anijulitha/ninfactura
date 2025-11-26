@@ -5,7 +5,7 @@ import urllib.parse
 import os
 
 # IMPORTA db y Factura
-from __init__ import db
+from ninfacturanuevo_app import db
 from models.factura import Factura
 
 # IMPORT DE FUNCIONES (YA NO HAY ERROR)
